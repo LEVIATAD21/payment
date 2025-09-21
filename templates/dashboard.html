@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Sistema Bitcoin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                🚀 Bitcoin Payment System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Novo Pagamento</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>📊 Estatísticas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Convertido</div>
+                            <div class="stat-value" id="total-converted">R$ {{ "%.2f"|format(stats.total_converted) }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Bitcoin Recebido</div>
+                            <div class="stat-value" id="btc-received">{{ "%.8f"|format(stats.btc_received) }} BTC</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Assinaturas Ativas</div>
+                            <div class="stat-value" id="active-subscriptions">{{ stats.active_subs }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Total Pagamentos</div>
+                            <div class="stat-value">{{ stats.total_payments }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-info text-white">
+                        <h5>⚙️ Configurações</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Wallet Bitcoin</label>
+                            <input type="text" class="form-control" id="wallet-address" 
+                                   placeholder="Digite o endereço da sua wallet">
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="updateWallet()">
+                            Atualizar Wallet
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="payments-tab" data-bs-toggle="tab" 
+                                data-bs-target="#payments" type="button" role="tab">
+                            💳 Pagamentos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="subscriptions-tab" data-bs-toggle="tab" 
+                                data-bs-target="#subscriptions" type="button" role="tab">
+                            🔄 Assinaturas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="conversions-tab" data-bs-toggle="tab" 
+                                data-bs-target="#conversions" type="button" role="tab">
+                            📈 Conversões
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="dashboardTabsContent">
+                    <!-- Pagamentos Tab -->
+                    <div class="tab-pane fade show active" id="payments" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5>💳 Histórico de Pagamentos</h5>
+                                <button class="btn btn-primary btn-sm" onclick="refreshPayments()">
+                                    🔄 Atualizar
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Cliente</th>
+                                                <th>Valor</th>
+                                                <th>Bitcoin</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="payments-table">
+                                            {% for payment in history %}
+                                            <tr>
+                                                <td>{{ payment.timestamp }}</td>
+                                                <td>{{ payment.customer_email }}</td>
+                                                <td>R$ {{ "%.2f"|format(payment.amount) }}</td>
+                                                <td>{{ "%.8f"|format(payment.amount / 200000) }} BTC</td>
+                                                <td><span class="badge bg-success">Processado</span></td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">
+                                                    Nenhum pagamento encontrado
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assinaturas Tab -->
+                    <div class="tab-pane fade" id="subscriptions" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5>🔄 Assinaturas Ativas</h5>
+                                <button class="btn btn-success btn-sm" onclick="createSubscription()">
+                                    ➕ Nova Assinatura
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Valor Mensal</th>
+                                                <th>Status</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="subscriptions-table">
+                                            {% for sub in subs %}
+                                            <tr>
+                                                <td>{{ sub.id }}</td>
+                                                <td>R$ {{ "%.2f"|format(sub.amount) }}</td>
+                                                <td><span class="badge bg-success">{{ sub.status }}</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="cancelSubscription('{{ sub.id }}')">
+                                                        ❌ Cancelar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">
+                                                    Nenhuma assinatura encontrada
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conversões Tab -->
+                    <div class="tab-pane fade" id="conversions" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5>📈 Histórico de Conversões</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <canvas id="conversionChart" width="400" height="200"></canvas>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Data</th>
+                                                        <th>Valor (R$)</th>
+                                                        <th>Bitcoin</th>
+                                                        <th>Taxa</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="conversions-table">
+                                                    {% for payment in history %}
+                                                    <tr>
+                                                        <td>{{ payment.timestamp }}</td>
+                                                        <td>R$ {{ "%.2f"|format(payment.amount) }}</td>
+                                                        <td>{{ "%.8f"|format(payment.amount / 200000) }} BTC</td>
+                                                        <td>1%</td>
+                                                    </tr>
+                                                    {% else %}
+                                                    <tr>
+                                                        <td colspan="4" class="text-center text-muted">
+                                                            Nenhuma conversão encontrada
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

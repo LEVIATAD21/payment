@@ -1,0 +1,9 @@
+version: "2"
+authtoken: # Adicione seu token aqui
+tunnels:
+  bitcoin-payment:
+    proto: http
+    addr: 5000
+    subdomain: bitcoin-payment-hacker
+    inspect: false
+    bind_tls: true

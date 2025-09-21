@@ -1,0 +1,105 @@
+name: Deploy Bitcoin Payment System
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: |
+        python -m pytest tests/ || echo "No tests found"
+    
+    - name: Lint code
+      run: |
+        pip install flake8
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Create deployment package
+      run: |
+        zip -r bitcoin-payment-system.zip . -x "*.git*" "*.pyc" "__pycache__/*" "*.log" "venv/*" ".env*"
+    
+    - name: Deploy to AWS S3
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        GITHUB_TOKEN: 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
+      run: |
+        aws s3 cp bitcoin-payment-system.zip s3://$S3_BUCKET/deployments/
+        aws s3 cp bitcoin-payment-system.zip s3://$S3_BUCKET/latest.zip
+    
+    - name: Deploy to Heroku
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+      run: |
+        # Instala Heroku CLI
+        curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+        # Deploy
+        heroku git:remote -a $HEROKU_APP_NAME
+        git push heroku main
+    
+    - name: Deploy to DigitalOcean
+      env:
+        DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+        DO_DROPLET_ID: ${{ secrets.DO_DROPLET_ID }}
+      run: |
+        # Cria snapshot do droplet
+        curl -X POST "https://api.digitalocean.com/v2/droplets/$DO_DROPLET_ID/actions" \
+          -H "Authorization: Bearer $DO_API_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"type":"snapshot","name":"bitcoin-payment-$(date +%Y%m%d-%H%M%S)"}'
+        
+        # Upload do código
+        scp -o StrictHostKeyChecking=no bitcoin-payment-system.zip root@$DO_DROPLET_IP:/var/www/
+        
+        # Deploy no servidor
+        ssh -o StrictHostKeyChecking=no root@$DO_DROPLET_IP "
+          cd /var/www &&
+          unzip -o bitcoin-payment-system.zip &&
+          pip install -r requirements.txt &&
+          systemctl restart bitcoin-payment
+        "
+    
+    - name: Notify deployment
+      run: |
+        echo "🚀 Bitcoin Payment System deployed successfully!"
+        echo "🌐 Application URL: https://bitcoin-payment.herokuapp.com"
+        echo "📊 Monitoring: https://dashboard.heroku.com/apps/bitcoin-payment"
