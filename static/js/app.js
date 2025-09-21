@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Event listeners
 function setupEventListeners() {
-    // Preview da conversão quando valor muda
-    document.getElementById('amount').addEventListener('input', function() {
+    // Preview da conversão quando valor muda (OTIMIZADO: só quando foca no campo)
+    document.getElementById('amount').addEventListener('blur', function() {
         const amount = parseFloat(this.value);
         if (amount >= 10) {
             showConversionPreview(amount);
@@ -42,59 +42,72 @@ async function loadBitcoinPrice() {
     }
 }
 
-// Mostra preview da conversão
+// Mostra preview da conversão (OTIMIZADO: com debounce)
+let previewTimeout;
 async function showConversionPreview(amount) {
-    try {
-        const response = await fetch('/api/preview_conversion', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ amount: amount, currency: 'brl' })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            document.getElementById('preview-details').innerHTML = `
-                <div class="row">
-                    <div class="col-6"><strong>Valor Original:</strong></div>
-                    <div class="col-6">R$ ${data.original_amount.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}</div>
-                </div>
-                <div class="row">
-                    <div class="col-6"><strong>Taxa (1%):</strong></div>
-                    <div class="col-6">R$ ${data.fee_amount.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}</div>
-                </div>
-                <div class="row">
-                    <div class="col-6"><strong>Valor Líquido:</strong></div>
-                    <div class="col-6">R$ ${data.amount_after_fee.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}</div>
-                </div>
-                <div class="row">
-                    <div class="col-6"><strong>Bitcoin Recebido:</strong></div>
-                    <div class="col-6 text-success fw-bold">${data.btc_amount.toFixed(8)} BTC</div>
-                </div>
-                <div class="row">
-                    <div class="col-6"><strong>Preço BTC:</strong></div>
-                    <div class="col-6">R$ ${data.btc_price.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}</div>
-                </div>
-            `;
-            document.getElementById('preview').style.display = 'block';
-        }
-    } catch (error) {
-        console.error('Erro ao calcular conversão:', error);
+    // Cancela requisição anterior se ainda estiver pendente
+    if (previewTimeout) {
+        clearTimeout(previewTimeout);
     }
+    
+    // Mostra loading
+    document.getElementById('preview-details').innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Calculando...</div>';
+    document.getElementById('preview').style.display = 'block';
+    
+    // Debounce de 500ms para evitar muitas requisições
+    previewTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch('/api/preview_conversion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ amount: amount, currency: 'brl' })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('preview-details').innerHTML = `
+                    <div class="row">
+                        <div class="col-6"><strong>Valor Original:</strong></div>
+                        <div class="col-6">R$ ${data.original_amount.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Taxa (1%):</strong></div>
+                        <div class="col-6">R$ ${data.fee_amount.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Valor Líquido:</strong></div>
+                        <div class="col-6">R$ ${data.amount_after_fee.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Bitcoin Recebido:</strong></div>
+                        <div class="col-6 text-success fw-bold">${data.btc_amount.toFixed(8)} BTC</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Preço BTC:</strong></div>
+                        <div class="col-6">R$ ${data.btc_price.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}</div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Erro ao calcular conversão:', error);
+            document.getElementById('preview-details').innerHTML = '<div class="alert alert-danger">Erro ao calcular conversão</div>';
+        }
+    }, 500);
 }
 
 // Esconde preview
@@ -193,8 +206,8 @@ function setLoading(loading) {
     }
 }
 
-// Atualiza preço do Bitcoin a cada 5 minutos
-setInterval(loadBitcoinPrice, 300000);
+// Atualiza preço do Bitcoin a cada 10 minutos (OTIMIZADO)
+setInterval(loadBitcoinPrice, 600000);
 
 // HACK: Funções de Dropship
 function showDropshipProducts() {
