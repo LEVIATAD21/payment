@@ -136,3 +136,54 @@ def process_payment_conversion(fiat_amount, currency):
             'success': False,
             'error': str(e)
         }
+
+# ============================================================================
+# 🆕 FUNÇÕES ADICIONAIS PARA APP_V2
+# ============================================================================
+
+def create_bitpay_invoice(amount, currency="brl", email=None):
+    """Cria invoice BitPay para pagamento Bitcoin"""
+    try:
+        import time
+        
+        if not BITPAY_ENABLED:
+            # Modo de desenvolvimento - retorna dados simulados
+            return {
+                'id': f'dev_invoice_{int(time.time())}',
+                'url': 'https://bitpay.com/invoice/dev',
+                'bitcoinAddress': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',  # Genesis block
+                'status': 'new',
+                'amount': amount,
+                'currency': currency
+            }
+        
+        # Usar função existente
+        invoice = create_invoice(amount, currency.upper())
+        
+        return {
+            'id': invoice.get('data', {}).get('id'),
+            'url': invoice.get('data', {}).get('url'),
+            'bitcoinAddress': invoice.get('data', {}).get('bitcoinAddress'),
+            'status': invoice.get('data', {}).get('status'),
+            'amount': amount,
+            'currency': currency
+        }
+        
+    except Exception as e:
+        print(f"Erro ao criar invoice BitPay: {e}")
+        return None
+
+def get_bitcoin_price():
+    """Obtém preço atual do Bitcoin via BitPay"""
+    try:
+        response = requests.get(f"{BITPAY_API_URL}/rates/BTC")
+        if response.status_code == 200:
+            rates = response.json()['data']
+            # Retorna preço em USD
+            for rate in rates:
+                if rate['code'] == 'USD':
+                    return float(rate['rate'])
+        return None
+    except Exception as e:
+        print(f"Erro ao obter preço Bitcoin: {e}")
+        return None

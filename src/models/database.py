@@ -239,3 +239,55 @@ def init_database(app):
             print("✅ Banco de dados inicializado com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao inicializar banco de dados: {e}")
+
+# ============================================================================
+# 🆕 FUNÇÕES ADICIONAIS PARA APP_V2
+# ============================================================================
+
+def save_payment(payment_data: dict) -> Payment:
+    """Salvar pagamento no banco de dados"""
+    try:
+        payment = Payment(
+            stripe_payment_id=payment_data.get('stripe_payment_intent_id', ''),
+            customer_email=payment_data.get('customer_email', ''),
+            customer_name=payment_data.get('customer_name', ''),
+            amount=payment_data.get('amount', 0),
+            currency=payment_data.get('currency', 'brl'),
+            btc_amount=payment_data.get('btc_amount'),
+            btc_price=payment_data.get('btc_price'),
+            conversion_fee=payment_data.get('conversion_fee'),
+            payment_type=payment_data.get('payment_type', 'unique'),
+            status=payment_data.get('status', 'pending')
+        )
+        
+        db.session.add(payment)
+        db.session.commit()
+        
+        return payment
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao salvar pagamento: {e}")
+        raise
+
+def save_subscription(subscription_data: dict) -> Subscription:
+    """Salvar assinatura no banco de dados"""
+    try:
+        subscription = Subscription(
+            stripe_subscription_id=subscription_data.get('stripe_subscription_id', ''),
+            customer_email=subscription_data.get('customer_email', ''),
+            customer_name=subscription_data.get('customer_name', ''),
+            amount=subscription_data.get('amount', 0),
+            currency=subscription_data.get('currency', 'brl'),
+            status=subscription_data.get('status', 'active')
+        )
+        
+        db.session.add(subscription)
+        db.session.commit()
+        
+        return subscription
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao salvar assinatura: {e}")
+        raise

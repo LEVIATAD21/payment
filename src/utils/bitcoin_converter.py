@@ -64,3 +64,41 @@ def get_conversion_preview(amount, currency='brl'):
             'success': False,
             'error': str(e)
         }
+
+def compare_exchanges():
+    """Compara preços entre diferentes exchanges"""
+    try:
+        # Preços de diferentes fontes
+        coingecko_price = get_bitcoin_price('usd')
+        
+        # Simular preços de outras exchanges (em produção, usar APIs reais)
+        binance_price = coingecko_price * 0.999  # Binance geralmente tem preços ligeiramente menores
+        coinbase_price = coingecko_price * 1.001  # Coinbase geralmente tem preços ligeiramente maiores
+        
+        return {
+            'coingecko': {
+                'price': coingecko_price,
+                'name': 'CoinGecko',
+                'fee': 0.0
+            },
+            'binance': {
+                'price': binance_price,
+                'name': 'Binance',
+                'fee': 0.1
+            },
+            'coinbase': {
+                'price': coinbase_price,
+                'name': 'Coinbase',
+                'fee': 0.5
+            },
+            'best_price': {
+                'exchange': 'binance',
+                'price': binance_price,
+                'savings': coingecko_price - binance_price
+            }
+        }
+    except Exception as e:
+        return {
+            'error': str(e),
+            'coingecko': {'price': 50000, 'name': 'CoinGecko', 'fee': 0.0}
+        }

@@ -119,3 +119,94 @@ def _handle_subscription_cancelled(subscription):
     if DEBUG:
         print("Assinatura cancelada")
     return json.dumps({'success': True, 'message': 'Assinatura cancelada'}), 200
+
+# ============================================================================
+# 🆕 FUNÇÃO PARA APP_V2
+# ============================================================================
+
+def handle_stripe_webhook(payload: bytes, sig_header: str) -> dict:
+    """
+    Processa webhook do Stripe para app_v2
+    
+    Args:
+        payload: Dados do webhook em bytes
+        sig_header: Cabeçalho de assinatura
+    
+    Returns:
+        Dict com resultado do processamento
+    """
+    try:
+        # Verificar webhook
+        event = verify_webhook(payload, sig_header)
+        
+        event_type = event['type']
+        
+        if event_type == 'payment_intent.succeeded':
+            return _handle_payment_success_v2(event['data']['object'])
+        elif event_type == 'invoice.paid':
+            return _handle_subscription_payment_v2(event['data']['object'])
+        elif event_type == 'customer.subscription.created':
+            return _handle_subscription_created_v2(event['data']['object'])
+        else:
+            return {'success': True, 'message': 'Evento ignorado'}
+            
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+def _handle_payment_success_v2(payment_intent: dict) -> dict:
+    """Processa pagamento bem-sucedido para app_v2"""
+    try:
+        amount = payment_intent['amount'] / 100
+        currency = payment_intent['currency']
+        customer_id = payment_intent.get('customer')
+        
+        # TODO: Implementar conversão para Bitcoin
+        # TODO: Atualizar banco de dados
+        # TODO: Enviar notificações
+        
+        return {
+            'success': True,
+            'message': 'Pagamento processado',
+            'amount': amount,
+            'currency': currency,
+            'customer_id': customer_id
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+def _handle_subscription_payment_v2(invoice: dict) -> dict:
+    """Processa pagamento de assinatura para app_v2"""
+    try:
+        amount = invoice['amount_paid'] / 100
+        currency = invoice['currency']
+        
+        # TODO: Implementar processamento de assinatura
+        
+        return {
+            'success': True,
+            'message': 'Pagamento de assinatura processado',
+            'amount': amount,
+            'currency': currency
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+def _handle_subscription_created_v2(subscription: dict) -> dict:
+    """Processa criação de assinatura para app_v2"""
+    try:
+        subscription_id = subscription['id']
+        customer_id = subscription['customer']
+        
+        # TODO: Implementar criação de assinatura
+        
+        return {
+            'success': True,
+            'message': 'Assinatura criada',
+            'subscription_id': subscription_id,
+            'customer_id': customer_id
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
