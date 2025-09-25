@@ -2,16 +2,21 @@
 
 ## 🎯 **APIs PRINCIPAIS (OBRIGATÓRIAS)**
 
-### **1. 💳 STRIPE (Cartões de Crédito/Débito)**
+### **1. 💳 STRIPE (Cartões + Criptomoedas)**
 - **API Key**: `sk_live_...` / `pk_live_...`
 - **Funcionalidades**:
   - ✅ Processamento de cartões
   - ✅ Assinaturas recorrentes
+  - ✅ **Pagamentos em criptomoedas (USDC, USDP)**
+  - ✅ **Onramp integrado (Fiat → Crypto)**
+  - ✅ **Onramp hospedado pela Stripe**
   - ✅ Webhooks de confirmação
   - ✅ Refunds e cancelamentos
 - **Endpoints necessários**:
   - `POST /api/stripe/create_payment`
   - `POST /api/stripe/create_subscription`
+  - `POST /api/stripe/create_crypto_payment`
+  - `POST /api/stripe/create_onramp`
   - `POST /api/stripe/webhook`
 
 ### **2. ₿ BITPAY (Conversão Bitcoin)**
@@ -34,6 +39,40 @@
 - **Endpoints necessários**:
   - `GET /api/binance/bitcoin_price`
   - `POST /api/binance/convert`
+
+---
+
+## 🪙 **FUNCIONALIDADES CRIPTO DA STRIPE**
+
+### **💎 Stripe Crypto Onramp:**
+- **Widget Integrado**: Incorpora compra de cripto diretamente no site
+- **Página Hospedada**: Página da Stripe para compra de cripto
+- **Stablecoins Suportadas**: USDC, USDP
+- **Conversão Fiat → Crypto**: Automática e segura
+
+### **🔧 Implementação:**
+```javascript
+// Stripe Crypto Onramp
+const onramp = StripeOnramp({
+  clientSecret: 'onramp_client_secret',
+  appearance: {
+    theme: 'dark'
+  }
+});
+
+// Widget integrado
+onramp.mount('#onramp-element');
+
+// Página hospedada
+window.location.href = onramp.url;
+```
+
+### **📊 Vantagens:**
+- ✅ **Uma única API** para cartões + cripto
+- ✅ **Conversão automática** Fiat → Crypto
+- ✅ **Interface familiar** para usuários
+- ✅ **Compliance automático** com regulamentações
+- ✅ **Webhooks unificados** para todos os pagamentos
 
 ---
 
@@ -188,8 +227,8 @@ MIXPANEL_TOKEN=seu_token
 ## 🚀 **PRIORIDADE DE IMPLEMENTAÇÃO**
 
 ### **🔥 CRÍTICO (Implementar Primeiro):**
-1. **Stripe** - Processamento de cartões
-2. **BitPay** - Conversão Bitcoin
+1. **Stripe** - Processamento de cartões + Cripto (USDC/USDP)
+2. **BitPay** - Conversão Bitcoin (backup/alternativa)
 3. **2FA** - Segurança
 
 ### **⚡ IMPORTANTE (Implementar Segundo):**
@@ -213,7 +252,8 @@ MIXPANEL_TOKEN=seu_token
 
 | API | Custo | Tipo |
 |-----|-------|------|
-| **Stripe** | 2.9% + $0.30 | Por transação |
+| **Stripe (Cartões)** | 2.9% + $0.30 | Por transação |
+| **Stripe (Crypto)** | 0.5% + $0.30 | Por transação |
 | **BitPay** | 1% | Por transação |
 | **Binance** | 0.1% | Por transação |
 | **OneSignal** | Gratuito até 10k | Por usuário |
@@ -230,4 +270,42 @@ MIXPANEL_TOKEN=seu_token
 
 ---
 
-**💡 Dica: Comece com as APIs críticas (Stripe + BitPay + 2FA) e vá adicionando as outras conforme a necessidade!**
+---
+
+## 🎯 **ESTRATÉGIA DE IMPLEMENTAÇÃO ATUALIZADA**
+
+### **🚀 Fase 1: Stripe Completo (Recomendado)**
+Com as funcionalidades de cripto da Stripe, você pode:
+- ✅ **Cartões de crédito/débito** (2.9% + $0.30)
+- ✅ **Pagamentos em USDC/USDP** (0.5% + $0.30)
+- ✅ **Onramp Fiat → Crypto** integrado
+- ✅ **Uma única API** para tudo
+- ✅ **Webhooks unificados**
+
+### **🔄 Fase 2: BitPay como Backup**
+- ✅ **Bitcoin nativo** para usuários que preferem
+- ✅ **Taxas competitivas** (1%)
+- ✅ **Diversificação** de provedores
+
+### **⚡ Fase 3: Otimizações**
+- ✅ **Binance** para taxas ainda menores
+- ✅ **OneSignal** para notificações
+- ✅ **A/B Testing** para otimização
+
+---
+
+## 💡 **RECOMENDAÇÃO ATUALIZADA**
+
+**🎯 Estratégia Ideal:**
+1. **Comece com Stripe completo** (cartões + cripto)
+2. **Adicione BitPay** como alternativa Bitcoin
+3. **Implemente Binance** para otimização de taxas
+4. **Adicione outras APIs** conforme necessidade
+
+**💰 Vantagem:**
+- **Menos integrações** necessárias inicialmente
+- **Interface unificada** para usuários
+- **Compliance automático** com regulamentações
+- **Desenvolvimento mais rápido**
+
+**💡 Dica: A Stripe com cripto pode ser sua solução principal, com BitPay como backup para Bitcoin nativo!**
