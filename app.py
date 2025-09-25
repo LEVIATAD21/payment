@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, request, jsonify, session
+from flask_cors import CORS
 from src.config.settings import APP_SECRET_KEY, DEBUG, STRIPE_PUBLISHABLE_KEY
 from src.api.stripe_handler import create_customer, create_payment_method, create_price, create_subscription, create_payment_intent
 from src.utils.bitcoin_converter import get_bitcoin_price, convert_fiat_to_btc, validate_payment_amount, get_conversion_preview
@@ -18,6 +19,9 @@ from src.utils.push_notifications import send_payment_notification, send_upsell_
 app = Flask(__name__)
 app.secret_key = APP_SECRET_KEY
 
+# Configurar CORS para permitir requisições do frontend
+CORS(app, origins=['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'])
+
 # Inicializa internacionalização
 init_babel(app)
 
@@ -30,13 +34,20 @@ subscriptions = []
 
 @app.route('/')
 def index():
-    """Página principal"""
-    return render_template('index.html', stripe_publishable_key=STRIPE_PUBLISHABLE_KEY)
+    """Redireciona para o frontend React"""
+    return jsonify({
+        "message": "Bitcoin Payment System API",
+        "frontend_url": "http://localhost:5173",
+        "api_docs": "http://localhost:5000/api/health"
+    })
 
 @app.route('/success')
 def success():
-    """Página de sucesso após pagamento"""
-    return render_template('success.html')
+    """Redireciona para o frontend React"""
+    return jsonify({
+        "message": "Payment successful",
+        "redirect_to": "http://localhost:5173"
+    })
 
 # Dashboard removido - será redefinido abaixo com 2FA
 
@@ -470,28 +481,34 @@ def dashboard():
         result = login_with_2fa(code)
         
         if result['success']:
-            return redirect('/dashboard')
+            return jsonify({'success': True, 'redirect_to': 'http://localhost:5173'})
         else:
-            return render_template('2fa.html', error=result['error'])
+            return jsonify({'success': False, 'error': result['error']})
     
     # Verifica se 2FA está ativo
     if not is_2fa_verified():
         # Setup 2FA se não configurado
         if '2fa_secret' not in session:
             setup_result = setup_2fa()
-            return render_template('2fa.html', 
-                                qr_code=setup_result['qr_code'],
-                                backup_codes=setup_result.get('backup_codes'))
+            return jsonify({
+                'setup_required': True,
+                'qr_code': setup_result['qr_code'],
+                'backup_codes': setup_result.get('backup_codes')
+            })
         else:
-            return render_template('2fa.html')
+            return jsonify({'setup_required': True})
     
-    # Dashboard normal
+    # Dashboard normal - retorna dados para o frontend
     stats = {
         'total_converted': sum(p['amount'] for p in payments_history),
         'btc_received': sum(convert_fiat_to_btc(p['amount'], p['currency']) for p in payments_history),
         'active_subs': len(subscriptions)
     }
-    return render_template('dashboard.html', stats=stats, history=payments_history, subs=subscriptions)
+    return jsonify({
+        'stats': stats,
+        'history': payments_history,
+        'subscriptions': subscriptions
+    })
 
 @app.route('/api/setup_2fa', methods=['POST'])
 def api_setup_2fa():

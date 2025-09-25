@@ -1,14 +1,16 @@
-# 🚀 **Bitcoin Payment System - Sistema Supremo Intergaláctico**
+# 🚀 **Bitcoin Payment System - Sistema Integrado Supremo**
 
 <div align="center">
 
 ![Bitcoin Payment System](https://img.shields.io/badge/Bitcoin-Payment%20System-orange?style=for-the-badge&logo=bitcoin)
 ![Python](https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python)
+![React](https://img.shields.io/badge/React-18.3+-blue?style=for-the-badge&logo=react)
 ![Flask](https://img.shields.io/badge/Flask-3.0.0-green?style=for-the-badge&logo=flask)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue?style=for-the-badge&logo=typescript)
 ![Stripe](https://img.shields.io/badge/Stripe-Integrated-purple?style=for-the-badge&logo=stripe)
 ![BitPay](https://img.shields.io/badge/BitPay-Integrated-orange?style=for-the-badge)
 
-**Sistema completo de pagamentos com conversão automática para Bitcoin**
+**Sistema completo integrado: Backend Python + Frontend React com conversão automática para Bitcoin**
 
 [![GitHub stars](https://img.shields.io/github/stars/bitcoin-payment-system?style=social)](https://github.com/bitcoin-payment-system)
 [![GitHub forks](https://img.shields.io/github/forks/bitcoin-payment-system?style=social)](https://github.com/bitcoin-payment-system)
@@ -21,6 +23,11 @@
 ## 🌟 **VISÃO GERAL**
 
 O **Bitcoin Payment System** é uma solução completa e suprema para processamento de pagamentos com conversão automática para Bitcoin. Desenvolvido com mentalidade hacker, o sistema oferece funcionalidades avançadas para maximizar receita passiva em Bitcoin.
+
+### **🔄 INTEGRAÇÃO COMPLETA**
+Este projeto integra dois repositórios em uma solução unificada:
+- **Backend Python/Flask**: APIs robustas, processamento de pagamentos, conversão Bitcoin
+- **Frontend React/TypeScript**: Interface moderna, dashboard completo, experiência premium
 
 ### **🎯 Características Principais:**
 - 💳 **Pagamentos com Stripe** - Processamento seguro de cartões
